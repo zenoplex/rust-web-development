@@ -1,11 +1,29 @@
 use serde::Serialize;
+use std::collections::HashMap;
 use std::str::FromStr;
 use warp::{
     filters::cors::CorsForbidden, http::Method, http::StatusCode, reject::Reject, Filter,
     Rejection, Reply,
 };
 
-#[derive(Debug, Serialize)]
+struct Store {
+    questions: HashMap<QuestionId, Question>,
+}
+
+impl Store {
+    fn new() -> Self {
+        Store {
+            questions: HashMap::new(),
+        }
+    }
+
+    fn add_question(mut self, question: Question) -> Self {
+        self.questions.insert(question.id.clone(), question);
+        self
+    }
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq, Hash)]
 struct QuestionId(String);
 
 #[derive(Debug, Serialize)]
@@ -55,7 +73,7 @@ async fn get_questions() -> Result<impl Reply, Rejection> {
 
 async fn return_error(rejection: Rejection) -> Result<impl Reply, Rejection> {
     println!("{:?}", rejection);
-    
+
     if let Some(error) = rejection.find::<CorsForbidden>() {
         Ok(warp::reply::with_status(
             error.to_string(),
