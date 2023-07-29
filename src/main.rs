@@ -53,13 +53,15 @@ async fn get_questions() -> Result<impl Reply, Rejection> {
     }
 }
 
-async fn return_error(r: Rejection) -> Result<impl Reply, Rejection> {
-    if let Some(error) = r.find::<CorsForbidden>() {
+async fn return_error(rejection: Rejection) -> Result<impl Reply, Rejection> {
+    println!("{:?}", rejection);
+    
+    if let Some(error) = rejection.find::<CorsForbidden>() {
         Ok(warp::reply::with_status(
             error.to_string(),
             StatusCode::FORBIDDEN,
         ))
-    } else if let Some(InvalidId) = r.find() {
+    } else if let Some(InvalidId) = rejection.find() {
         Ok(warp::reply::with_status(
             "No valid ID presented".to_string(),
             StatusCode::UNPROCESSABLE_ENTITY,
