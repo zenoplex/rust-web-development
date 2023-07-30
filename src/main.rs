@@ -1,4 +1,4 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::str::FromStr;
 use warp::{
@@ -13,30 +13,20 @@ struct Store {
 impl Store {
     fn new() -> Self {
         Store {
-            questions: HashMap::new(),
+            questions: Self::init(),
         }
     }
 
-    fn add_question(mut self, question: Question) -> Self {
-        self.questions.insert(question.id.clone(), question);
-        self
-    }
-
-    fn init(self) -> Self {
-      let question = Question::new(
-        QuestionId::from_str("1").expect("Id not set"),
-        "How?".to_string(),
-        "Please help!".to_string(),
-        Some(vec!["general".to_string()]),
-      );
-      self.add_question(question)
+    fn init() -> HashMap<QuestionId, Question> {
+        let file = include_str!("../questions.json");
+        serde_json::from_str(file).expect("Can't read questions.json")
     }
 }
 
-#[derive(Debug, Clone, Serialize, PartialEq, Eq, Hash)]
+#[derive(Deserialize, Debug, Clone, Serialize, PartialEq, Eq, Hash)]
 struct QuestionId(String);
 
-#[derive(Debug, Serialize)]
+#[derive(Deserialize, Debug, Serialize)]
 struct Question {
     id: QuestionId,
     title: String,
