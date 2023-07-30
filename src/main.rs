@@ -6,6 +6,7 @@ use warp::{
     Rejection, Reply,
 };
 
+#[derive(Clone)]
 struct Store {
     questions: HashMap<QuestionId, Question>,
 }
@@ -26,7 +27,7 @@ impl Store {
 #[derive(Deserialize, Debug, Clone, Serialize, PartialEq, Eq, Hash)]
 struct QuestionId(String);
 
-#[derive(Deserialize, Debug, Serialize)]
+#[derive(Deserialize, Debug, Clone, Serialize)]
 struct Question {
     id: QuestionId,
     title: String,
@@ -57,7 +58,7 @@ impl FromStr for QuestionId {
 struct InvalidId;
 impl Reject for InvalidId {}
 
-async fn get_questions() -> Result<impl Reply, Rejection> {
+async fn get_questions(store: Store) -> Result<impl Reply, Rejection> {
     let question = Question::new(
         QuestionId::from_str("1").expect("No id provider"),
         "First Question".to_string(),
@@ -95,7 +96,7 @@ async fn return_error(rejection: Rejection) -> Result<impl Reply, Rejection> {
 #[tokio::main]
 async fn main() {
     let store = Store::new();
-    println!("{:?}", store.questions);
+    let store_filter = warp::any().map(move || store.clone());
 
     let cors = warp::cors()
         .allow_any_origin()
@@ -105,6 +106,7 @@ async fn main() {
     let get_items = warp::get()
         .and(warp::path("questions"))
         .and(warp::path::end())
+        .and(store_filter)
         .and_then(get_questions);
 
     let routes = get_items.with(cors).recover(return_error);
