@@ -21,6 +21,16 @@ impl Store {
         self.questions.insert(question.id.clone(), question);
         self
     }
+
+    fn init(self) -> Self {
+      let question = Question::new(
+        QuestionId::from_str("1").expect("Id not set"),
+        "How?".to_string(),
+        "Please help!".to_string(),
+        Some(vec!["general".to_string()]),
+      );
+      self.add_question(question)
+    }
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq, Hash)]
