@@ -94,6 +94,9 @@ async fn return_error(rejection: Rejection) -> Result<impl Reply, Rejection> {
 
 #[tokio::main]
 async fn main() {
+    let store = Store::new();
+    println!("{:?}", store.questions);
+
     let cors = warp::cors()
         .allow_any_origin()
         .allow_header("content-type")
