@@ -1,9 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::str::FromStr;
 use warp::{
-    filters::cors::CorsForbidden, http::Method, http::StatusCode, reject::Reject, Filter,
-    Rejection, Reply,
+    filters::cors::CorsForbidden, http::Method, http::StatusCode, Filter, Rejection, Reply,
 };
 
 #[derive(Clone)]
@@ -35,41 +33,9 @@ struct Question {
     tags: Option<Vec<String>>,
 }
 
-impl Question {
-    fn new(id: QuestionId, title: String, content: String, tags: Option<Vec<String>>) -> Self {
-        Question {
-            id,
-            title,
-            content,
-            tags,
-        }
-    }
-}
-
-impl FromStr for QuestionId {
-    type Err = std::io::Error;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(QuestionId(s.to_string()))
-    }
-}
-
-#[derive(Debug)]
-struct InvalidId;
-impl Reject for InvalidId {}
-
 async fn get_questions(store: Store) -> Result<impl Reply, Rejection> {
-    let question = Question::new(
-        QuestionId::from_str("1").expect("No id provider"),
-        "First Question".to_string(),
-        "Content of question".to_string(),
-        Some(vec!["faq".to_string()]),
-    );
-
-    match question.id.0.parse::<u32>() {
-        Err(_) => Err(warp::reject::custom(InvalidId)),
-        Ok(_) => Ok(warp::reply::json(&question)),
-    }
+    let res: Vec<Question> = store.questions.values().cloned().collect();
+    Ok(warp::reply::json(&res))
 }
 
 async fn return_error(rejection: Rejection) -> Result<impl Reply, Rejection> {
@@ -79,11 +45,6 @@ async fn return_error(rejection: Rejection) -> Result<impl Reply, Rejection> {
         Ok(warp::reply::with_status(
             error.to_string(),
             StatusCode::FORBIDDEN,
-        ))
-    } else if let Some(InvalidId) = rejection.find() {
-        Ok(warp::reply::with_status(
-            "No valid ID presented".to_string(),
-            StatusCode::UNPROCESSABLE_ENTITY,
         ))
     } else {
         Ok(warp::reply::with_status(
