@@ -81,22 +81,24 @@ async fn get_questions(
     params: HashMap<String, String>,
     store: Store,
 ) -> Result<impl Reply, Rejection> {
-    let mut start = 0;
-
-    if let Some(n) = params.get("start") {
-        start = n.parse::<usize>().expect("Could not parse start");
-    }
-
-    println!("{}", start);
-
     let res: Vec<Question> = store.questions.values().cloned().collect();
-    Ok(warp::reply::json(&res))
+    if !params.is_empty() {
+        let pagination = extract_pagination(params)?;
+        let res = &res[pagination.start..pagination.end];
+        Ok(warp::reply::json(&res))
+    } else {
+        Ok(warp::reply::json(&res))
+    }
 }
 
 async fn return_error(rejection: Rejection) -> Result<impl Reply, Rejection> {
     println!("{:?}", rejection);
-
-    if let Some(error) = rejection.find::<CorsForbidden>() {
+    if let Some(error) = rejection.find::<Error>() {
+        Ok(warp::reply::with_status(
+            error.to_string(),
+            StatusCode::RANGE_NOT_SATISFIABLE,
+        ))
+    } else if let Some(error) = rejection.find::<CorsForbidden>() {
         Ok(warp::reply::with_status(
             error.to_string(),
             StatusCode::FORBIDDEN,
