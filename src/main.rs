@@ -1,7 +1,9 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::fmt;
 use warp::{
-    filters::cors::CorsForbidden, http::Method, http::StatusCode, Filter, Rejection, Reply,
+    filters::cors::CorsForbidden, http::Method, http::StatusCode, reject::Reject, Filter,
+    Rejection, Reply,
 };
 
 #[derive(Clone)]
@@ -31,6 +33,48 @@ struct Question {
     title: String,
     content: String,
     tags: Option<Vec<String>>,
+}
+
+#[derive(Debug)]
+enum Error {
+    ParseError(std::num::ParseIntError),
+    MissingParameters,
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Error::ParseError(ref err) => write!(f, "Parse error: {}", err),
+            Error::MissingParameters => write!(f, "Missing parameter"),
+        }
+    }
+}
+
+impl Reject for Error {}
+
+#[derive(Debug)]
+struct Pagination {
+    start: usize,
+    end: usize,
+}
+
+fn extract_pagination(params: HashMap<String, String>) -> Result<Pagination, Error> {
+    if params.contains_key("start") && params.contains_key("end") {
+        let start = params
+            .get("start")
+            .unwrap()
+            .parse::<usize>()
+            .map_err(Error::ParseError)?;
+        let end = params
+            .get("end")
+            .unwrap()
+            .parse::<usize>()
+            .map_err(Error::ParseError)?;
+
+        return Ok(Pagination { start, end });
+    }
+
+    Err(Error::MissingParameters)
 }
 
 async fn get_questions(
