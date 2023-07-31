@@ -33,7 +33,11 @@ struct Question {
     tags: Option<Vec<String>>,
 }
 
-async fn get_questions(store: Store) -> Result<impl Reply, Rejection> {
+async fn get_questions(
+    params: HashMap<String, String>,
+    store: Store,
+) -> Result<impl Reply, Rejection> {
+    println!("{:?}", params);
     let res: Vec<Question> = store.questions.values().cloned().collect();
     Ok(warp::reply::json(&res))
 }
@@ -67,6 +71,7 @@ async fn main() {
     let get_items = warp::get()
         .and(warp::path("questions"))
         .and(warp::path::end())
+        .and(warp::query())
         .and(store_filter)
         .and_then(get_questions);
 
