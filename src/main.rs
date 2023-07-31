@@ -37,7 +37,14 @@ async fn get_questions(
     params: HashMap<String, String>,
     store: Store,
 ) -> Result<impl Reply, Rejection> {
-    println!("{:?}", params);
+    let mut start = 0;
+
+    if let Some(n) = params.get("start") {
+        start = n.parse::<usize>().expect("Could not parse start");
+    }
+
+    println!("{}", start);
+
     let res: Vec<Question> = store.questions.values().cloned().collect();
     Ok(warp::reply::json(&res))
 }
