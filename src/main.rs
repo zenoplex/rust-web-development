@@ -84,6 +84,7 @@ async fn get_questions(
     let res: Vec<Question> = store.questions.values().cloned().collect();
     if !params.is_empty() {
         let pagination = extract_pagination(params)?;
+        // TODO: check if pagination range is valid
         let res = &res[pagination.start..pagination.end];
         Ok(warp::reply::json(&res))
     } else {
