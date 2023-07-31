@@ -94,6 +94,17 @@ async fn get_questions(
     }
 }
 
+async fn add_question(
+    store: Store, question: Question
+) -> Result<impl Reply, Rejection> {
+    store.questions.write().await.insert(question.id.clone(), question);
+
+    Ok(warp::reply::with_status(
+        "Question added",
+        StatusCode::OK,
+    ))
+}
+
 async fn return_error(rejection: Rejection) -> Result<impl Reply, Rejection> {
     println!("{:?}", rejection);
     if let Some(error) = rejection.find::<Error>() {
