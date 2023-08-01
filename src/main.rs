@@ -183,9 +183,17 @@ async fn main() {
         .and(warp::body::json())
         .and_then(update_question);
 
+    let delete_question = warp::delete()
+        .and(warp::path("questions"))
+        .and(warp::path::param::<String>())
+        .and(warp::path::end())
+        .and(store_filter.clone())
+        .and_then(delete_question);
+
     let routes = get_questions
         .or(add_question)
         .or(update_question)
+        .or(delete_question)
         .with(cors)
         .recover(return_error);
 
