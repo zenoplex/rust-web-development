@@ -135,14 +135,14 @@ async fn main() {
         .allow_header("content-type")
         .allow_methods(&[Method::GET, Method::POST, Method::PUT, Method::DELETE]);
 
-    let get_items = warp::get()
+    let get_questions = warp::get()
         .and(warp::path("questions"))
         .and(warp::path::end())
         .and(warp::query())
         .and(store_filter)
         .and_then(get_questions);
 
-    let routes = get_items.with(cors).recover(return_error);
+    let routes = get_questions.with(cors).recover(return_error);
 
     warp::serve(routes).run(([127, 0, 0, 1], 3030)).await;
 }
