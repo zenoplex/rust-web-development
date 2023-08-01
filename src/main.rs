@@ -119,6 +119,13 @@ async fn update_question(
     Ok(warp::reply::with_status("Question updated", StatusCode::OK))
 }
 
+async fn delete_question(id: String, store: Store) -> Result<impl Reply, Rejection> {
+    match store.questions.write().await.remove(&QuestionId(id)) {
+        Some(_) => Ok(warp::reply::with_status("Question deleted", StatusCode::OK)),
+        None => Err(warp::reject::custom(Error::QuestionNotFound)),
+    }
+}
+
 async fn return_error(rejection: Rejection) -> Result<impl Reply, Rejection> {
     println!("{:?}", rejection);
     if let Some(error) = rejection.find::<Error>() {
