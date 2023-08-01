@@ -4,8 +4,8 @@ use std::fmt;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use warp::{
-    filters::cors::CorsForbidden, http::Method, http::StatusCode, reject::Reject, Filter,
-    Rejection, Reply,
+    body::BodyDeserializeError, filters::cors::CorsForbidden, http::Method, http::StatusCode,
+    reject::Reject, Filter, Rejection, Reply,
 };
 
 #[derive(Clone)]
@@ -130,6 +130,11 @@ async fn return_error(rejection: Rejection) -> Result<impl Reply, Rejection> {
         Ok(warp::reply::with_status(
             error.to_string(),
             StatusCode::FORBIDDEN,
+        ))
+    } else if let Some(error) = rejection.find::<BodyDeserializeError>() {
+        Ok(warp::reply::with_status(
+            error.to_string(),
+            StatusCode::UNPROCESSABLE_ENTITY,
         ))
     } else {
         Ok(warp::reply::with_status(
