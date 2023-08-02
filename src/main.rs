@@ -1,11 +1,10 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::fmt;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use warp::{
     body::BodyDeserializeError, filters::cors::CorsForbidden, http::Method, http::StatusCode,
-    reject::Reject, Filter, Rejection, Reply,
+    Filter, Rejection, Reply,
 };
 
 #[derive(Clone)]
@@ -49,24 +48,29 @@ struct Answer {
     question_id: QuestionId,
 }
 
-#[derive(Debug)]
-enum Error {
-    ParseError(std::num::ParseIntError),
-    MissingParameters,
-    QuestionNotFound,
-}
+mod error {
+    use std::fmt;
+    use warp::reject::Reject;
 
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Error::ParseError(ref err) => write!(f, "Parse error: {}", err),
-            Error::MissingParameters => write!(f, "Missing parameter"),
-            Error::QuestionNotFound => write!(f, "Question not found"),
+    #[derive(Debug)]
+    pub enum Error {
+        ParseError(std::num::ParseIntError),
+        MissingParameters,
+        QuestionNotFound,
+    }
+
+    impl fmt::Display for Error {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            match self {
+                Error::ParseError(ref err) => write!(f, "Parse error: {}", err),
+                Error::MissingParameters => write!(f, "Missing parameter"),
+                Error::QuestionNotFound => write!(f, "Question not found"),
+            }
         }
     }
-}
 
-impl Reject for Error {}
+    impl Reject for Error {}
+}
 
 #[derive(Debug)]
 struct Pagination {
@@ -74,23 +78,23 @@ struct Pagination {
     end: usize,
 }
 
-fn extract_pagination(params: HashMap<String, String>) -> Result<Pagination, Error> {
+fn extract_pagination(params: HashMap<String, String>) -> Result<Pagination, error::Error> {
     if params.contains_key("start") && params.contains_key("end") {
         let start = params
             .get("start")
             .unwrap()
             .parse::<usize>()
-            .map_err(Error::ParseError)?;
+            .map_err(error::Error::ParseError)?;
         let end = params
             .get("end")
             .unwrap()
             .parse::<usize>()
-            .map_err(Error::ParseError)?;
+            .map_err(error::Error::ParseError)?;
 
         return Ok(Pagination { start, end });
     }
 
-    Err(Error::MissingParameters)
+    Err(error::Error::MissingParameters)
 }
 
 async fn get_questions(
@@ -111,7 +115,7 @@ async fn get_questions(
 async fn get_question(id: String, store: Store) -> Result<impl Reply, Rejection> {
     match store.questions.read().await.get(&QuestionId(id)) {
         Some(q) => Ok(warp::reply::json(&q)),
-        None => Err(warp::reject::custom(Error::QuestionNotFound)),
+        None => Err(warp::reject::custom(error::Error::QuestionNotFound)),
     }
 }
 
@@ -132,7 +136,7 @@ async fn update_question(
 ) -> Result<impl Reply, Rejection> {
     match store.questions.write().await.get_mut(&QuestionId(id)) {
         Some(q) => *q = question,
-        None => return Err(warp::reject::custom(Error::QuestionNotFound)),
+        None => return Err(warp::reject::custom(error::Error::QuestionNotFound)),
     }
 
     Ok(warp::reply::with_status("Question updated", StatusCode::OK))
@@ -141,7 +145,7 @@ async fn update_question(
 async fn delete_question(id: String, store: Store) -> Result<impl Reply, Rejection> {
     match store.questions.write().await.remove(&QuestionId(id)) {
         Some(_) => Ok(warp::reply::with_status("Question deleted", StatusCode::OK)),
-        None => Err(warp::reject::custom(Error::QuestionNotFound)),
+        None => Err(warp::reject::custom(error::Error::QuestionNotFound)),
     }
 }
 
@@ -167,7 +171,7 @@ async fn add_answer(
 
 async fn return_error(rejection: Rejection) -> Result<impl Reply, Rejection> {
     println!("{:?}", rejection);
-    if let Some(error) = rejection.find::<Error>() {
+    if let Some(error) = rejection.find::<error::Error>() {
         Ok(warp::reply::with_status(
             error.to_string(),
             StatusCode::RANGE_NOT_SATISFIABLE,
