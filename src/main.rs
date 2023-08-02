@@ -175,6 +175,13 @@ async fn main() {
         .and(store_filter.clone())
         .and_then(get_questions);
 
+    let get_question = warp::get()
+        .and(warp::path("questions"))
+        .and(warp::path::param::<String>())
+        .and(warp::path::end())
+        .and(store_filter.clone())
+        .and_then(get_question);
+
     let add_question = warp::post()
         .and(warp::path("questions"))
         .and(warp::path::end())
@@ -198,6 +205,7 @@ async fn main() {
         .and_then(delete_question);
 
     let routes = get_questions
+        .or(get_question)
         .or(add_question)
         .or(update_question)
         .or(delete_question)
