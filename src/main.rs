@@ -10,18 +10,20 @@ use warp::{
 
 #[derive(Clone)]
 struct Store {
+    answers: Arc<RwLock<HashMap<AnswerId, Answer>>>,
     questions: Arc<RwLock<HashMap<QuestionId, Question>>>,
 }
 
 impl Store {
     fn new() -> Self {
         Store {
+            answers: Arc::new(RwLock::new(HashMap::new())),
             questions: Arc::new(RwLock::new(Self::init())),
         }
     }
 
     fn init() -> HashMap<QuestionId, Question> {
-        let file = include_str!("../questions.json");
+        let file: &str = include_str!("../questions.json");
         serde_json::from_str(file).expect("Can't read questions.json")
     }
 }
