@@ -96,6 +96,13 @@ async fn get_questions(
     }
 }
 
+async fn get_question(id: String, store: Store) -> Result<impl Reply, Rejection> {
+    match store.questions.read().await.get(&QuestionId(id)) {
+        Some(q) => Ok(warp::reply::json(&q)),
+        None => Err(warp::reject::custom(Error::QuestionNotFound)),
+    }
+}
+
 async fn add_question(store: Store, question: Question) -> Result<impl Reply, Rejection> {
     store
         .questions
