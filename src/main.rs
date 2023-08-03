@@ -1,4 +1,3 @@
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -9,7 +8,10 @@ mod routes;
 mod store;
 mod types;
 
-use crate::types::question::{Question, QuestionId};
+use crate::types::{
+    answer::{Answer, AnswerId},
+    question::{Question, QuestionId},
+};
 
 #[derive(Clone)]
 struct Store {
@@ -29,16 +31,6 @@ impl Store {
         let file: &str = include_str!("../questions.json");
         serde_json::from_str(file).expect("Can't read questions.json")
     }
-}
-
-#[derive(Deserialize, Debug, Clone, Serialize, PartialEq, Eq, Hash)]
-struct AnswerId(String);
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-struct Answer {
-    id: AnswerId,
-    content: String,
-    question_id: types::question::QuestionId,
 }
 
 #[derive(Debug)]
