@@ -8,80 +8,8 @@ mod types;
 
 use crate::types::{
     answer::{Answer, AnswerId},
-    pagination::Pagination,
-    question::{Question, QuestionId},
+    question::QuestionId,
 };
-
-fn extract_pagination(params: HashMap<String, String>) -> Result<Pagination, error::Error> {
-    if params.contains_key("start") && params.contains_key("end") {
-        let start = params
-            .get("start")
-            .unwrap()
-            .parse::<usize>()
-            .map_err(error::Error::ParseError)?;
-        let end = params
-            .get("end")
-            .unwrap()
-            .parse::<usize>()
-            .map_err(error::Error::ParseError)?;
-
-        return Ok(Pagination { start, end });
-    }
-
-    Err(error::Error::MissingParameters)
-}
-
-async fn get_questions(
-    params: HashMap<String, String>,
-    store: store::Store,
-) -> Result<impl Reply, Rejection> {
-    let res: Vec<Question> = store.questions.read().await.values().cloned().collect();
-    if !params.is_empty() {
-        let pagination = extract_pagination(params)?;
-        // TODO: check if pagination range is valid
-        let res = &res[pagination.start..pagination.end];
-        Ok(warp::reply::json(&res))
-    } else {
-        Ok(warp::reply::json(&res))
-    }
-}
-
-async fn get_question(id: String, store: store::Store) -> Result<impl Reply, Rejection> {
-    match store.questions.read().await.get(&QuestionId(id)) {
-        Some(q) => Ok(warp::reply::json(&q)),
-        None => Err(warp::reject::custom(error::Error::QuestionNotFound)),
-    }
-}
-
-async fn add_question(store: store::Store, question: Question) -> Result<impl Reply, Rejection> {
-    store
-        .questions
-        .write()
-        .await
-        .insert(question.id.clone(), question);
-
-    Ok(warp::reply::with_status("Question added", StatusCode::OK))
-}
-
-async fn update_question(
-    id: String,
-    store: store::Store,
-    question: Question,
-) -> Result<impl Reply, Rejection> {
-    match store.questions.write().await.get_mut(&QuestionId(id)) {
-        Some(q) => *q = question,
-        None => return Err(warp::reject::custom(error::Error::QuestionNotFound)),
-    }
-
-    Ok(warp::reply::with_status("Question updated", StatusCode::OK))
-}
-
-async fn delete_question(id: String, store: store::Store) -> Result<impl Reply, Rejection> {
-    match store.questions.write().await.remove(&QuestionId(id)) {
-        Some(_) => Ok(warp::reply::with_status("Question deleted", StatusCode::OK)),
-        None => Err(warp::reject::custom(error::Error::QuestionNotFound)),
-    }
-}
 
 async fn add_answer(
     store: store::Store,
@@ -118,21 +46,21 @@ async fn main() {
         .and(warp::path::end())
         .and(warp::query())
         .and(store_filter.clone())
-        .and_then(get_questions);
+        .and_then(routes::question::get_questions);
 
     let get_question = warp::get()
         .and(warp::path("questions"))
         .and(warp::path::param::<String>())
         .and(warp::path::end())
         .and(store_filter.clone())
-        .and_then(get_question);
+        .and_then(routes::question::get_question);
 
     let add_question = warp::post()
         .and(warp::path("questions"))
         .and(warp::path::end())
         .and(store_filter.clone())
         .and(warp::body::json())
-        .and_then(add_question);
+        .and_then(routes::question::add_question);
 
     let update_question = warp::put()
         .and(warp::path("questions"))
@@ -140,14 +68,14 @@ async fn main() {
         .and(warp::path::end())
         .and(store_filter.clone())
         .and(warp::body::json())
-        .and_then(update_question);
+        .and_then(routes::question::update_question);
 
     let delete_question = warp::delete()
         .and(warp::path("questions"))
         .and(warp::path::param::<String>())
         .and(warp::path::end())
         .and(store_filter.clone())
-        .and_then(delete_question);
+        .and_then(routes::question::delete_question);
 
     let add_answer = warp::post()
         .and(warp::path("answers"))
