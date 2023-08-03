@@ -9,6 +9,8 @@ mod routes;
 mod store;
 mod types;
 
+use crate::types::question::{Question, QuestionId};
+
 #[derive(Clone)]
 struct Store {
     answers: Arc<RwLock<HashMap<AnswerId, Answer>>>,
@@ -23,21 +25,10 @@ impl Store {
         }
     }
 
-    fn init() -> HashMap<QuestionId, Question> {
+    fn init() -> HashMap<types::question::QuestionId, types::question::Question> {
         let file: &str = include_str!("../questions.json");
         serde_json::from_str(file).expect("Can't read questions.json")
     }
-}
-
-#[derive(Deserialize, Debug, Clone, Serialize, PartialEq, Eq, Hash)]
-struct QuestionId(String);
-
-#[derive(Deserialize, Debug, Clone, Serialize)]
-struct Question {
-    id: QuestionId,
-    title: String,
-    content: String,
-    tags: Option<Vec<String>>,
 }
 
 #[derive(Deserialize, Debug, Clone, Serialize, PartialEq, Eq, Hash)]
@@ -47,7 +38,7 @@ struct AnswerId(String);
 struct Answer {
     id: AnswerId,
     content: String,
-    question_id: QuestionId,
+    question_id: types::question::QuestionId,
 }
 
 #[derive(Debug)]
