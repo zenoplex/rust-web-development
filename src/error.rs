@@ -6,7 +6,7 @@ use warp::{
 
 #[derive(Debug)]
 pub enum Error {
-    ParseError(std::num::ParseIntError),
+    ParseFailed(std::num::ParseIntError),
     MissingParameters,
     QuestionNotFound,
 }
@@ -14,7 +14,7 @@ pub enum Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Error::ParseError(ref err) => write!(f, "Parse error: {}", err),
+            Error::ParseFailed(ref err) => write!(f, "Parse error: {}", err),
             Error::MissingParameters => write!(f, "Missing parameter"),
             Error::QuestionNotFound => write!(f, "Question not found"),
         }

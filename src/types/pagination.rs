@@ -13,12 +13,12 @@ pub fn extract_pagination(params: HashMap<String, String>) -> Result<Pagination,
             .get("start")
             .unwrap()
             .parse::<usize>()
-            .map_err(error::Error::ParseError)?;
+            .map_err(error::Error::ParseFailed)?;
         let end = params
             .get("end")
             .unwrap()
             .parse::<usize>()
-            .map_err(error::Error::ParseError)?;
+            .map_err(error::Error::ParseFailed)?;
 
         return Ok(Pagination { start, end });
     }
