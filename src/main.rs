@@ -5,6 +5,9 @@ use tokio::sync::RwLock;
 use warp::{http::Method, http::StatusCode, Filter, Rejection, Reply};
 
 mod error;
+mod routes;
+mod store;
+mod types;
 
 #[derive(Clone)]
 struct Store {
