@@ -1,6 +1,4 @@
 use std::collections::HashMap;
-use std::sync::Arc;
-use tokio::sync::RwLock;
 use warp::{http::Method, http::StatusCode, Filter, Rejection, Reply};
 
 mod error;
@@ -13,26 +11,6 @@ use crate::types::{
     pagination::Pagination,
     question::{Question, QuestionId},
 };
-
-#[derive(Clone)]
-struct Store {
-    answers: Arc<RwLock<HashMap<AnswerId, Answer>>>,
-    questions: Arc<RwLock<HashMap<QuestionId, Question>>>,
-}
-
-impl Store {
-    fn new() -> Self {
-        Store {
-            answers: Arc::new(RwLock::new(HashMap::new())),
-            questions: Arc::new(RwLock::new(Self::init())),
-        }
-    }
-
-    fn init() -> HashMap<types::question::QuestionId, types::question::Question> {
-        let file: &str = include_str!("../questions.json");
-        serde_json::from_str(file).expect("Can't read questions.json")
-    }
-}
 
 fn extract_pagination(params: HashMap<String, String>) -> Result<Pagination, error::Error> {
     if params.contains_key("start") && params.contains_key("end") {
@@ -55,7 +33,7 @@ fn extract_pagination(params: HashMap<String, String>) -> Result<Pagination, err
 
 async fn get_questions(
     params: HashMap<String, String>,
-    store: Store,
+    store: store::Store,
 ) -> Result<impl Reply, Rejection> {
     let res: Vec<Question> = store.questions.read().await.values().cloned().collect();
     if !params.is_empty() {
@@ -68,14 +46,14 @@ async fn get_questions(
     }
 }
 
-async fn get_question(id: String, store: Store) -> Result<impl Reply, Rejection> {
+async fn get_question(id: String, store: store::Store) -> Result<impl Reply, Rejection> {
     match store.questions.read().await.get(&QuestionId(id)) {
         Some(q) => Ok(warp::reply::json(&q)),
         None => Err(warp::reject::custom(error::Error::QuestionNotFound)),
     }
 }
 
-async fn add_question(store: Store, question: Question) -> Result<impl Reply, Rejection> {
+async fn add_question(store: store::Store, question: Question) -> Result<impl Reply, Rejection> {
     store
         .questions
         .write()
@@ -87,7 +65,7 @@ async fn add_question(store: Store, question: Question) -> Result<impl Reply, Re
 
 async fn update_question(
     id: String,
-    store: Store,
+    store: store::Store,
     question: Question,
 ) -> Result<impl Reply, Rejection> {
     match store.questions.write().await.get_mut(&QuestionId(id)) {
@@ -98,7 +76,7 @@ async fn update_question(
     Ok(warp::reply::with_status("Question updated", StatusCode::OK))
 }
 
-async fn delete_question(id: String, store: Store) -> Result<impl Reply, Rejection> {
+async fn delete_question(id: String, store: store::Store) -> Result<impl Reply, Rejection> {
     match store.questions.write().await.remove(&QuestionId(id)) {
         Some(_) => Ok(warp::reply::with_status("Question deleted", StatusCode::OK)),
         None => Err(warp::reject::custom(error::Error::QuestionNotFound)),
@@ -106,7 +84,7 @@ async fn delete_question(id: String, store: Store) -> Result<impl Reply, Rejecti
 }
 
 async fn add_answer(
-    store: Store,
+    store: store::Store,
     params: HashMap<String, String>,
 ) -> Result<impl Reply, Rejection> {
     let answer = Answer {
@@ -127,7 +105,7 @@ async fn add_answer(
 
 #[tokio::main]
 async fn main() {
-    let store = Store::new();
+    let store = store::Store::new();
     let store_filter = warp::any().map(move || store.clone());
 
     let cors = warp::cors()
