@@ -10,6 +10,7 @@ mod types;
 
 use crate::types::{
     answer::{Answer, AnswerId},
+    pagination::Pagination,
     question::{Question, QuestionId},
 };
 
@@ -31,12 +32,6 @@ impl Store {
         let file: &str = include_str!("../questions.json");
         serde_json::from_str(file).expect("Can't read questions.json")
     }
-}
-
-#[derive(Debug)]
-struct Pagination {
-    start: usize,
-    end: usize,
 }
 
 fn extract_pagination(params: HashMap<String, String>) -> Result<Pagination, error::Error> {
