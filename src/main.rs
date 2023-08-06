@@ -16,7 +16,7 @@ async fn main() {
     log::warn!("This is a warning!");
 
     let log = warp::log::custom(|info| {
-        eprintln!(
+        log::info!(
             "{} {} {} {:?} from {} with {:?}",
             info.method(),
             info.path(),
