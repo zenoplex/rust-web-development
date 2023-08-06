@@ -10,10 +10,14 @@ mod types;
 #[tokio::main]
 async fn main() {
     log4rs::init_file("log4rs.yaml", Default::default()).unwrap();
-    
+
     log::error!("This is an error!");
     log::info!("This is info!");
     log::warn!("This is a warning!");
+
+    let log = warp::log::custom(|info| {
+        eprintln!("{} {} {}", info.method(), info.path(), info.status());
+    });
 
     let store = store::Store::new();
     let store_filter = warp::any().map(move || store.clone());
@@ -73,6 +77,7 @@ async fn main() {
         .or(delete_question)
         .or(add_answer)
         .with(cors)
+        .with(log)
         .recover(return_error);
 
     warp::serve(routes).run(([127, 0, 0, 1], 3030)).await;
