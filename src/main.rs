@@ -27,6 +27,8 @@ async fn main() {
         );
     });
 
+    let id_filter = warp::any().map(|| uuid::Uuid::new_v4().to_string());
+
     let store = store::Store::new();
     let store_filter = warp::any().map(move || store.clone());
 
@@ -40,6 +42,7 @@ async fn main() {
         .and(warp::path::end())
         .and(warp::query())
         .and(store_filter.clone())
+        .and(id_filter)
         .and_then(routes::question::get_questions);
 
     let get_question = warp::get()

@@ -8,7 +8,9 @@ use warp::{http::StatusCode, Rejection, Reply};
 pub async fn get_questions(
     params: HashMap<String, String>,
     store: store::Store,
+    uuid: String,
 ) -> Result<impl Reply, Rejection> {
+    log::info!("{} Start querying questions", uuid);
     let res: Vec<Question> = store.questions.read().await.values().cloned().collect();
     if !params.is_empty() {
         let pagination = extract_pagination(params)?;
