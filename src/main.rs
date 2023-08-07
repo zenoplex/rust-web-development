@@ -9,24 +9,6 @@ mod types;
 
 #[tokio::main]
 async fn main() {
-    log4rs::init_file("log4rs.yaml", Default::default()).unwrap();
-
-    log::error!("This is an error!");
-    log::info!("This is info!");
-    log::warn!("This is a warning!");
-
-    let log = warp::log::custom(|info| {
-        log::info!(
-            "{} {} {} {:?} from {} with {:?}",
-            info.method(),
-            info.path(),
-            info.status(),
-            info.elapsed(),
-            info.remote_addr().unwrap(),
-            info.request_headers()
-        );
-    });
-
     let id_filter = warp::any().map(|| uuid::Uuid::new_v4().to_string());
 
     let store = store::Store::new();
@@ -88,7 +70,6 @@ async fn main() {
         .or(delete_question)
         .or(add_answer)
         .with(cors)
-        .with(log)
         .recover(return_error);
 
     warp::serve(routes).run(([127, 0, 0, 1], 3030)).await;
