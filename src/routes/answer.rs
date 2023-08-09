@@ -12,7 +12,7 @@ pub async fn add_answer(
         id: AnswerId("1".to_string()),
         // TODO: Stop using unwrap
         content: params.get("content").unwrap().to_string(),
-        question_id: QuestionId(params.get("question_id").unwrap().to_string()),
+        question_id: QuestionId(params.get("question_id").unwrap().parse::<i32>().unwrap()),
     };
 
     store
