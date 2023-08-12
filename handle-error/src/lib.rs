@@ -1,3 +1,4 @@
+use sqlx::Error as SqlxError;
 use std::fmt;
 use warp::{
     body::BodyDeserializeError, filters::cors::CorsForbidden, http::StatusCode, reject::Reject,
@@ -6,17 +7,19 @@ use warp::{
 
 #[derive(Debug)]
 pub enum Error {
-    ParseFailed(std::num::ParseIntError),
+    ParseError(std::num::ParseIntError),
     MissingParameters,
     QuestionNotFound,
+    DatabaseQueryError(SqlxError),
 }
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Error::ParseFailed(ref err) => write!(f, "Parse error: {}", err),
+            Error::ParseError(ref err) => write!(f, "Parse error: {}", err),
             Error::MissingParameters => write!(f, "Missing parameter"),
             Error::QuestionNotFound => write!(f, "Question not found"),
+            Error::DatabaseQueryError(err) => write!(f, "Query could not be executed {}", err),
         }
     }
 }
