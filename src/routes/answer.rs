@@ -9,7 +9,7 @@ pub async fn add_answer(
     params: HashMap<String, String>,
 ) -> Result<impl Reply, Rejection> {
     let answer = Answer {
-        id: AnswerId("1".to_string()),
+        id: AnswerId(1),
         // TODO: Stop using unwrap
         content: params.get("content").unwrap().to_string(),
         question_id: QuestionId(params.get("question_id").unwrap().parse::<i32>().unwrap()),
