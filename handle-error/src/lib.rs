@@ -4,6 +4,8 @@ use warp::{
     Rejection, Reply,
 };
 
+use tracing::{event, Level, instrument};
+
 #[derive(Debug)]
 pub enum Error {
     ParseError(std::num::ParseIntError),
@@ -23,24 +25,34 @@ impl fmt::Display for Error {
 
 impl Reject for Error {}
 
+#[instrument]
 pub async fn return_error(rejection: Rejection) -> Result<impl Reply, Rejection> {
-    println!("{:?}", rejection);
-    if let Some(error) = rejection.find::<Error>() {
+    if let Some(Error::DatabaseQueryError) = rejection.find() {
+        event!(Level::ERROR, "Database query error");
         Ok(warp::reply::with_status(
-            error.to_string(),
-            StatusCode::RANGE_NOT_SATISFIABLE,
+            Error::DatabaseQueryError.to_string(),
+            StatusCode::UNPROCESSABLE_ENTITY,
         ))
     } else if let Some(error) = rejection.find::<CorsForbidden>() {
+        event!(Level::ERROR, "CORS forbidden error {}", error);
         Ok(warp::reply::with_status(
             error.to_string(),
             StatusCode::FORBIDDEN,
         ))
     } else if let Some(error) = rejection.find::<BodyDeserializeError>() {
+        event!(Level::ERROR, "Cannot deserialize request body {}", error);
         Ok(warp::reply::with_status(
             error.to_string(),
             StatusCode::UNPROCESSABLE_ENTITY,
         ))
+    } else if let Some(error) = rejection.find::<Error>() {
+        event!(Level::ERROR, "{}", error);
+        Ok(warp::reply::with_status(
+            error.to_string(),
+            StatusCode::RANGE_NOT_SATISFIABLE,
+        ))
     } else {
+        event!(Level::WARN, "Requested route was not found");
         Ok(warp::reply::with_status(
             "Route not found".to_string(),
             StatusCode::NOT_FOUND,
