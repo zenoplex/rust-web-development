@@ -1,6 +1,8 @@
 #![warn(clippy::all)]
 
+use dotenvy::dotenv;
 use handle_error::return_error;
+use std::env;
 use tracing_subscriber::fmt::format::FmtSpan;
 use warp::{http::Method, Filter};
 
@@ -10,12 +12,17 @@ mod types;
 
 #[tokio::main]
 async fn main() {
+    dotenv().ok();
+
+    let postgres_database_url =
+        env::var("POSTGRES_DATABASE_URL").expect("POSTGRES_DATABASE_URL must be set");
+
     let log_filter = std::env::var("RUST_LOG")
         // "-"(dash) in package name is replaced with "_"(underscore)
         // https://docs.rs/tracing-subscriber/latest/tracing_subscriber/filter/struct.EnvFilter.html#examples-1
         .unwrap_or_else(|_| "rust_web_development=info,warp=warn".to_owned());
 
-    let store = store::Store::new();
+    let store = store::Store::new(&postgres_database_url).await;
     let store_filter = warp::any().map(move || store.clone());
 
     tracing_subscriber::fmt()
@@ -45,12 +52,12 @@ async fn main() {
             )
         }));
 
-    let get_question = warp::get()
-        .and(warp::path("questions"))
-        .and(warp::path::param::<i32>())
-        .and(warp::path::end())
-        .and(store_filter.clone())
-        .and_then(routes::question::get_question);
+    // let get_question = warp::get()
+    //     .and(warp::path("questions"))
+    //     .and(warp::path::param::<i32>())
+    //     .and(warp::path::end())
+    //     .and(store_filter.clone())
+    //     .and_then(routes::question::get_question);
 
     let add_question = warp::post()
         .and(warp::path("questions"))
@@ -82,7 +89,7 @@ async fn main() {
         .and_then(routes::answer::add_answer);
 
     let routes = get_questions
-        .or(get_question)
+        // .or(get_question)
         .or(add_question)
         .or(update_question)
         .or(delete_question)
