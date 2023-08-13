@@ -10,3 +10,10 @@ pub struct Question {
     pub content: String,
     pub tags: Option<Vec<String>>,
 }
+
+#[derive(Deserialize, Debug, Clone, Serialize)]
+pub struct NewQuestion {
+    pub title: String,
+    pub content: String,
+    pub tags: Option<Vec<String>>,
+}
