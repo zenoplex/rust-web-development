@@ -2,12 +2,12 @@ use handle_error::Error;
 use std::collections::HashMap;
 
 /// Pagination struct to extract pagination parameters from query string
-#[derive(Debug)]
+#[derive(Default, Debug)]
 pub struct Pagination {
     /// Index of the first item to be returned
-    pub start: usize,
+    pub limit: Option<u32>,
     /// Index of the last item to be returned
-    pub end: usize,
+    pub offset: u32,
 }
 
 /// Extract pagination parameters from /questions endpoint
@@ -24,19 +24,21 @@ pub struct Pagination {
 /// assert_eq!(p.end, 10);
 /// ```
 pub fn extract_pagination(params: HashMap<String, String>) -> Result<Pagination, Error> {
-    if params.contains_key("start") && params.contains_key("end") {
-        let start = params
-            .get("start")
-            .unwrap()
-            .parse::<usize>()
-            .map_err(Error::ParseFailed)?;
-        let end = params
-            .get("end")
-            .unwrap()
-            .parse::<usize>()
-            .map_err(Error::ParseFailed)?;
-
-        return Ok(Pagination { start, end });
+    if params.contains_key("limit") && params.contains_key("offset") {
+        return Ok(Pagination {
+            limit: Some(
+                params
+                    .get("limit")
+                    .unwrap()
+                    .parse::<u32>()
+                    .map_err(Error::ParseError)?,
+            ),
+            offset: params
+                .get("offset")
+                .unwrap()
+                .parse::<u32>()
+                .map_err(Error::ParseError)?,
+        });
     }
 
     Err(Error::MissingParameters)
