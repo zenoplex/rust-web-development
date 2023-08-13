@@ -451,7 +451,6 @@ dependencies = [
 name = "handle-error"
 version = "0.1.0"
 dependencies = [
- "sqlx",
  "warp",
 ]
 
