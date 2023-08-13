@@ -20,7 +20,7 @@ async fn main() {
     let log_filter = std::env::var("RUST_LOG")
         // "-"(dash) in package name is replaced with "_"(underscore)
         // https://docs.rs/tracing-subscriber/latest/tracing_subscriber/filter/struct.EnvFilter.html#examples-1
-        .unwrap_or_else(|_| "rust_web_development=info,warp=warn".to_owned());
+        .unwrap_or_else(|_| "handle_error=warn,rust_web_development=info,warp=warn".to_owned());
 
     let store = store::Store::new(&postgres_database_url).await;
     let store_filter = warp::any().map(move || store.clone());
