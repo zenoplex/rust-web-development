@@ -1,16 +1,18 @@
+use reqwest::Error as ReqwestError;
 use std::fmt;
 use warp::{
     body::BodyDeserializeError, filters::cors::CorsForbidden, http::StatusCode, reject::Reject,
     Rejection, Reply,
 };
 
-use tracing::{event, Level, instrument};
+use tracing::{event, instrument, Level};
 
 #[derive(Debug)]
 pub enum Error {
     ParseError(std::num::ParseIntError),
     MissingParameters,
     DatabaseQueryError,
+    ExternalAPIError(ReqwestError),
 }
 
 impl fmt::Display for Error {
@@ -19,6 +21,7 @@ impl fmt::Display for Error {
             Error::ParseError(ref err) => write!(f, "Parse error: {}", err),
             Error::MissingParameters => write!(f, "Missing parameter"),
             Error::DatabaseQueryError => write!(f, "Query could not be executed"),
+            Error::ExternalAPIError(err) => write!(f, "Cannot execute {}", err),
         }
     }
 }
@@ -32,6 +35,12 @@ pub async fn return_error(rejection: Rejection) -> Result<impl Reply, Rejection>
         Ok(warp::reply::with_status(
             Error::DatabaseQueryError.to_string(),
             StatusCode::UNPROCESSABLE_ENTITY,
+        ))
+    } else if let Some(Error::ExternalAPIError(e)) = rejection.find() {
+        event!(Level::ERROR, "{}", e);
+        Ok(warp::reply::with_status(
+            "Internal Server Error".to_string(),
+            StatusCode::INTERNAL_SERVER_ERROR,
         ))
     } else if let Some(error) = rejection.find::<CorsForbidden>() {
         event!(Level::ERROR, "CORS forbidden error {}", error);
