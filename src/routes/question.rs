@@ -46,7 +46,6 @@ pub async fn add_question(
     store: store::Store,
     new_question: NewQuestion,
 ) -> Result<impl Reply, Rejection> {
-    // TODO: sample implementation
     let client = Client::new();
     let res = client
         .post(env::var("BAD_WORDS_API_ENDPOINT").expect("BAD_WORDS_API_ENDPOINT not set"))
@@ -57,18 +56,25 @@ pub async fn add_question(
         .body("A list with shit words")
         .send()
         .await
-        .map_err(handle_error::Error::ExternalAPIError)?
-        .text()
-        .await
         .map_err(handle_error::Error::ExternalAPIError)?;
 
-    println!("{}", res);
+    match res.error_for_status() {
+        Ok(res) => {
+            let res = res
+                .text()
+                .await
+                .map_err(handle_error::Error::ExternalAPIError)?;
+            println!("{}", res);
 
-    if let Err(e) = store.add_question(new_question).await {
-        return Err(warp::reject::custom(e));
+            match store.add_question(new_question).await {
+                Ok(_) => Ok(warp::reply::with_status("Question added", StatusCode::OK)),
+                Err(e) => Err(warp::reject::custom(e)),
+            }
+        }
+        Err(e) => Err(warp::reject::custom(handle_error::Error::ExternalAPIError(
+            e,
+        ))),
     }
-
-    Ok(warp::reply::with_status("Question added", StatusCode::OK))
 }
 
 pub async fn update_question(
