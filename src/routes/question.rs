@@ -3,7 +3,9 @@ use crate::types::pagination::extract_pagination;
 use crate::types::pagination::Pagination;
 use crate::types::question::NewQuestion;
 use crate::types::question::Question;
+use reqwest::Client;
 use std::collections::HashMap;
+use std::env;
 use tracing::{event, instrument, Level};
 use warp::{http::StatusCode, Rejection, Reply};
 
@@ -44,6 +46,24 @@ pub async fn add_question(
     store: store::Store,
     new_question: NewQuestion,
 ) -> Result<impl Reply, Rejection> {
+    // TODO: sample implementation
+    let client = Client::new();
+    let res = client
+        .post(env::var("BAD_WORDS_API_ENDPOINT").expect("BAD_WORDS_API_ENDPOINT not set"))
+        .header(
+            "apiKey",
+            env::var("BAD_WORDS_API_KEY").expect("BAD_WORDS_API_KEY not set"),
+        )
+        .body("A list with shit words")
+        .send()
+        .await
+        .map_err(handle_error::Error::ExternalAPIError)?
+        .text()
+        .await
+        .map_err(handle_error::Error::ExternalAPIError)?;
+
+    println!("{}", res);
+
     if let Err(e) = store.add_question(new_question).await {
         return Err(warp::reject::custom(e));
     }
