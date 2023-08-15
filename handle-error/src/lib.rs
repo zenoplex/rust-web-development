@@ -4,6 +4,7 @@ use warp::{
     body::BodyDeserializeError, filters::cors::CorsForbidden, http::StatusCode, reject::Reject,
     Rejection, Reply,
 };
+use std::fmt::Display;
 
 use tracing::{event, instrument, Level};
 
@@ -13,6 +14,20 @@ pub enum Error {
     MissingParameters,
     DatabaseQueryError,
     ExternalAPIError(ReqwestError),
+    ClientError(APILayerError),
+    ServerError(APILayerError),
+}
+
+#[derive(Debug, Clone)]
+pub struct APILayerError {
+    status: u16,
+    message: String,
+}
+
+impl Display for APILayerError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "API error {}: {}", self.status, self.message)
+    }
 }
 
 impl fmt::Display for Error {
@@ -22,6 +37,8 @@ impl fmt::Display for Error {
             Error::MissingParameters => write!(f, "Missing parameter"),
             Error::DatabaseQueryError => write!(f, "Query could not be executed"),
             Error::ExternalAPIError(err) => write!(f, "Cannot execute {}", err),
+            Error::ClientError(err) => write!(f, "External Client error {}", err),
+            Error::ServerError(err) => write!(f, "External Server error {}", err),
         }
     }
 }
