@@ -4,10 +4,34 @@ use crate::types::pagination::Pagination;
 use crate::types::question::NewQuestion;
 use crate::types::question::Question;
 use reqwest::Client;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::env;
 use tracing::{event, instrument, Level};
 use warp::{http::StatusCode, Rejection, Reply};
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
+pub struct APIResponse {
+    message: String,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
+struct BadWord {
+    original: String,
+    word: String,
+    deviations: i64,
+    info: i64,
+    #[serde(rename = "replacedLength")]
+    replaced_len: i64,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
+struct BadWordsResponse {
+    content: String,
+    bad_words_total: i64,
+    bad_words_list: Vec<BadWord>,
+    censored_content: String,
+}
 
 #[instrument]
 pub async fn get_questions(
