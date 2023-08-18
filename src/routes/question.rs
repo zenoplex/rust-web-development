@@ -21,7 +21,7 @@ struct BadWord {
     word: String,
     deviations: i64,
     info: i64,
-    #[serde(rename = "replacedLength")]
+    #[serde(rename = "replacedLen")]
     replaced_len: i64,
 }
 
@@ -82,22 +82,38 @@ pub async fn add_question(
         .await
         .map_err(handle_error::Error::ExternalAPIError)?;
 
-    match res.error_for_status() {
-        Ok(res) => {
-            let res = res
-                .text()
-                .await
-                .map_err(handle_error::Error::ExternalAPIError)?;
-            println!("{}", res);
+    if !res.status().is_success() {
+        if res.status().is_client_error() {
+            let err = handle_error::APILayerError {
+                status: res.status().as_u16(),
+                message: res.json::<APIResponse>().await.unwrap().message,
+            };
 
-            match store.add_question(new_question).await {
-                Ok(_) => Ok(warp::reply::with_status("Question added", StatusCode::OK)),
-                Err(e) => Err(warp::reject::custom(e)),
-            }
+            return Err(handle_error::Error::ClientError(err).into());
+        } else {
+            let err = handle_error::APILayerError {
+                status: res.status().as_u16(),
+                message: res.json::<APIResponse>().await.unwrap().message,
+            };
+
+            return Err(handle_error::Error::ServerError(err).into());
         }
-        Err(e) => Err(warp::reject::custom(handle_error::Error::ExternalAPIError(
-            e,
-        ))),
+    }
+
+    let res = res
+        .json::<BadWordsResponse>()
+        .await
+        .map_err(handle_error::Error::ExternalAPIError)?;
+    let content = res.censored_content;
+    let question = NewQuestion {
+        title: new_question.title,
+        content,
+        tags: new_question.tags,
+    };
+
+    match store.add_question(question).await {
+        Ok(question) => Ok(warp::reply::json(&question)),
+        Err(e) => Err(warp::reject::custom(e)),
     }
 }
 
