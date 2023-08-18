@@ -20,8 +20,8 @@ pub enum Error {
 
 #[derive(Debug, Clone)]
 pub struct APILayerError {
-    status: u16,
-    message: String,
+    pub status: u16,
+    pub message: String,
 }
 
 impl Display for APILayerError {
@@ -44,6 +44,7 @@ impl fmt::Display for Error {
 }
 
 impl Reject for Error {}
+impl Reject for APILayerError {}
 
 #[instrument]
 pub async fn return_error(rejection: Rejection) -> Result<impl Reply, Rejection> {
@@ -54,6 +55,18 @@ pub async fn return_error(rejection: Rejection) -> Result<impl Reply, Rejection>
             StatusCode::UNPROCESSABLE_ENTITY,
         ))
     } else if let Some(Error::ExternalAPIError(e)) = rejection.find() {
+        event!(Level::ERROR, "{}", e);
+        Ok(warp::reply::with_status(
+            "Internal Server Error".to_string(),
+            StatusCode::INTERNAL_SERVER_ERROR,
+        ))
+    } else if let Some(Error::ClientError(e)) = rejection.find() {
+        event!(Level::ERROR, "{}", e);
+        Ok(warp::reply::with_status(
+            "Internal Server Error".to_string(),
+            StatusCode::INTERNAL_SERVER_ERROR,
+        ))
+    } else if let Some(Error::ServerError(e)) = rejection.find() {
         event!(Level::ERROR, "{}", e);
         Ok(warp::reply::with_status(
             "Internal Server Error".to_string(),
