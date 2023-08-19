@@ -41,10 +41,10 @@ pub async fn check_profanity(content: String) -> Result<String, handle_error::Er
     if !res.status().is_success() {
         if res.status().is_client_error() {
             let err = transform_error(res).await;
-            return Err(handle_error::Error::ClientError(err).into());
+            return Err(handle_error::Error::ClientError(err));
         } else {
             let err = transform_error(res).await;
-            return Err(handle_error::Error::ServerError(err).into());
+            return Err(handle_error::Error::ServerError(err));
         }
     }
 
