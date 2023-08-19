@@ -1,12 +1,11 @@
+use crate::profanity::check_profanity;
 use crate::store;
 use crate::types::pagination::extract_pagination;
 use crate::types::pagination::Pagination;
 use crate::types::question::NewQuestion;
 use crate::types::question::Question;
-use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::env;
 use tracing::{event, instrument, Level};
 use warp::{http::StatusCode, Rejection, Reply};
 
@@ -70,35 +69,18 @@ pub async fn add_question(
     store: store::Store,
     new_question: NewQuestion,
 ) -> Result<impl Reply, Rejection> {
-    let client = Client::new();
-    let res = client
-        .post(env::var("BAD_WORDS_API_ENDPOINT").expect("BAD_WORDS_API_ENDPOINT not set"))
-        .header(
-            "apiKey",
-            env::var("BAD_WORDS_API_KEY").expect("BAD_WORDS_API_KEY not set"),
-        )
-        .body("A list with shit words")
-        .send()
-        .await
-        .map_err(handle_error::Error::ExternalAPIError)?;
+    let title = match check_profanity(new_question.title).await {
+        Ok(res) => res,
+        Err(e) => return Err(warp::reject::custom(e)),
+    };
 
-    if !res.status().is_success() {
-        if res.status().is_client_error() {
-            let err = transform_error(res).await;
-            return Err(handle_error::Error::ClientError(err).into());
-        } else {
-            let err = transform_error(res).await;
-            return Err(handle_error::Error::ServerError(err).into());
-        }
-    }
+    let content = match check_profanity(new_question.content).await {
+        Ok(res) => res,
+        Err(e) => return Err(warp::reject::custom(e)),
+    };
 
-    let res = res
-        .json::<BadWordsResponse>()
-        .await
-        .map_err(handle_error::Error::ExternalAPIError)?;
-    let content = res.censored_content;
     let question = NewQuestion {
-        title: new_question.title,
+        title,
         content,
         tags: new_question.tags,
     };
@@ -106,13 +88,6 @@ pub async fn add_question(
     match store.add_question(question).await {
         Ok(question) => Ok(warp::reply::json(&question)),
         Err(e) => Err(warp::reject::custom(e)),
-    }
-}
-
-async fn transform_error(res: reqwest::Response) -> handle_error::APILayerError {
-    handle_error::APILayerError {
-        status: res.status().as_u16(),
-        message: res.json::<APIResponse>().await.unwrap().message,
     }
 }
 
