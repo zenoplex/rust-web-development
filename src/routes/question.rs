@@ -96,11 +96,27 @@ pub async fn update_question(
     store: store::Store,
     question: Question,
 ) -> Result<impl Reply, Rejection> {
-    if let Err(e) = store.update_question(question, id).await {
-        return Err(warp::reject::custom(e));
-    }
+    let title = match check_profanity(question.title).await {
+        Ok(res) => res,
+        Err(e) => return Err(warp::reject::custom(e)),
+    };
 
-    Ok(warp::reply::with_status("Question updated", StatusCode::OK))
+    let content = match check_profanity(question.content).await {
+        Ok(res) => res,
+        Err(e) => return Err(warp::reject::custom(e)),
+    };
+
+    let question = Question {
+        id: question.id,
+        title,
+        content,
+        tags: question.tags,
+    };
+
+    match store.update_question(question, id).await {
+        Ok(question) => Ok(warp::reply::json(&question)),
+        Err(e) => Err(warp::reject::custom(e)),
+    }
 }
 
 pub async fn delete_question(id: i32, store: store::Store) -> Result<impl Reply, Rejection> {
