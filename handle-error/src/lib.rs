@@ -1,10 +1,11 @@
 use reqwest::Error as ReqwestError;
+use reqwest_middleware::Error as ReqwestMiddlewareError;
 use std::fmt;
+use std::fmt::Display;
 use warp::{
     body::BodyDeserializeError, filters::cors::CorsForbidden, http::StatusCode, reject::Reject,
     Rejection, Reply,
 };
-use std::fmt::Display;
 
 use tracing::{event, instrument, Level};
 
@@ -13,6 +14,8 @@ pub enum Error {
     ParseError(std::num::ParseIntError),
     MissingParameters,
     DatabaseQueryError,
+    ReqwestAPIError(ReqwestError),
+    ReqwestMiddlewareAPIError(ReqwestMiddlewareError),
     ExternalAPIError(ReqwestError),
     ClientError(APILayerError),
     ServerError(APILayerError),
@@ -36,6 +39,8 @@ impl fmt::Display for Error {
             Error::ParseError(ref err) => write!(f, "Parse error: {}", err),
             Error::MissingParameters => write!(f, "Missing parameter"),
             Error::DatabaseQueryError => write!(f, "Query could not be executed"),
+            Error::ReqwestAPIError(err) => write!(f, "Reqwest error: {}", err),
+            Error::ReqwestMiddlewareAPIError(err) => write!(f, "Reqwest middleware error: {}", err),
             Error::ExternalAPIError(err) => write!(f, "Cannot execute {}", err),
             Error::ClientError(err) => write!(f, "External Client error {}", err),
             Error::ServerError(err) => write!(f, "External Server error {}", err),
@@ -53,6 +58,18 @@ pub async fn return_error(rejection: Rejection) -> Result<impl Reply, Rejection>
         Ok(warp::reply::with_status(
             Error::DatabaseQueryError.to_string(),
             StatusCode::UNPROCESSABLE_ENTITY,
+        ))
+    } else if let Some(Error::ReqwestAPIError(e)) = rejection.find() {
+        event!(Level::ERROR, "{}", e);
+        Ok(warp::reply::with_status(
+            "Internal Server Error".to_string(),
+            StatusCode::INTERNAL_SERVER_ERROR,
+        ))
+    } else if let Some(Error::ReqwestMiddlewareAPIError(e)) = rejection.find() {
+        event!(Level::ERROR, "{}", e);
+        Ok(warp::reply::with_status(
+            "Internal Server Error".to_string(),
+            StatusCode::INTERNAL_SERVER_ERROR,
         ))
     } else if let Some(Error::ExternalAPIError(e)) = rejection.find() {
         event!(Level::ERROR, "{}", e);
