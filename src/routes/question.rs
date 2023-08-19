@@ -84,18 +84,10 @@ pub async fn add_question(
 
     if !res.status().is_success() {
         if res.status().is_client_error() {
-            let err = handle_error::APILayerError {
-                status: res.status().as_u16(),
-                message: res.json::<APIResponse>().await.unwrap().message,
-            };
-
+            let err = transform_error(res).await;
             return Err(handle_error::Error::ClientError(err).into());
         } else {
-            let err = handle_error::APILayerError {
-                status: res.status().as_u16(),
-                message: res.json::<APIResponse>().await.unwrap().message,
-            };
-
+            let err = transform_error(res).await;
             return Err(handle_error::Error::ServerError(err).into());
         }
     }
@@ -114,6 +106,13 @@ pub async fn add_question(
     match store.add_question(question).await {
         Ok(question) => Ok(warp::reply::json(&question)),
         Err(e) => Err(warp::reject::custom(e)),
+    }
+}
+
+async fn transform_error(res: reqwest::Response) -> handle_error::APILayerError {
+    handle_error::APILayerError {
+        status: res.status().as_u16(),
+        message: res.json::<APIResponse>().await.unwrap().message,
     }
 }
 
