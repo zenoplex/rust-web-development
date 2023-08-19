@@ -6,6 +6,7 @@ use std::env;
 use tracing_subscriber::fmt::format::FmtSpan;
 use warp::{http::Method, Filter};
 
+mod profanity;
 mod routes;
 mod store;
 mod types;
