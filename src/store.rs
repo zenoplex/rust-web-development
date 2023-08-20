@@ -170,7 +170,23 @@ impl Store {
         {
             Ok(account) => Ok(account),
             Err(e) => {
-                tracing::event!(tracing::Level::ERROR, "{:?}", e);
+                tracing::event!(
+                    tracing::Level::ERROR,
+                    // Records an event with custom fields:
+                    // https://docs.rs/tracing/latest/tracing/index.html#recording-fields
+
+                    // Retrieve field from DatabaseError
+                    // see https://docs.rs/sqlx/latest/sqlx/error/trait.DatabaseError.html
+                    code = e
+                        .as_database_error()
+                        .unwrap()
+                        .code()
+                        .unwrap()
+                        .parse::<i32>()
+                        .unwrap(),
+                    db_message = e.as_database_error().unwrap().message(),
+                    constraint = e.as_database_error().unwrap().constraint().unwrap()
+                );
                 Err(Error::DatabaseQueryError)
             }
         }
