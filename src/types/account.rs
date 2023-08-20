@@ -5,13 +5,7 @@ struct AccountId(i32);
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct Account {
-    id: AccountId,
-    email: String,
-    password: String,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-struct NewAccount {
+    id: Option<AccountId>,
     email: String,
     password: String,
 }
