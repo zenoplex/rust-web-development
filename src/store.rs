@@ -1,6 +1,7 @@
 use sqlx::postgres::{PgPool, PgPoolOptions, PgRow};
 use sqlx::Row;
 
+use crate::types::account::{Account, AccountId};
 use crate::types::answer::{Answer, AnswerId, NewAnswer};
 use crate::types::question::{NewQuestion, Question, QuestionId};
 use handle_error::Error;
@@ -144,6 +145,30 @@ impl Store {
         .await
         {
             Ok(answer) => Ok(answer),
+            Err(e) => {
+                tracing::event!(tracing::Level::ERROR, "{:?}", e);
+                Err(Error::DatabaseQueryError)
+            }
+        }
+    }
+
+    pub async fn add_account(&self, account: Account) -> Result<Account, Error> {
+        match sqlx::query(
+            "INSERT INTO accounts (email, password)
+            VALUES ($1, $2)
+            RETURNING *",
+        )
+        .bind(account.email)
+        .bind(account.password)
+        .map(|row: PgRow| Account {
+            id: Some(AccountId(row.get("id"))),
+            email: row.get("email"),
+            password: row.get("password"),
+        })
+        .fetch_one(&self.connection)
+        .await
+        {
+            Ok(account) => Ok(account),
             Err(e) => {
                 tracing::event!(tracing::Level::ERROR, "{:?}", e);
                 Err(Error::DatabaseQueryError)

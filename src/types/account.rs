@@ -1,11 +1,11 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-struct AccountId(i32);
+pub struct AccountId(pub i32);
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-struct Account {
-    id: Option<AccountId>,
-    email: String,
-    password: String,
+pub struct Account {
+    pub id: Option<AccountId>,
+    pub email: String,
+    pub password: String,
 }
