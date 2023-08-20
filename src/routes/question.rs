@@ -96,12 +96,18 @@ pub async fn update_question(
     store: store::Store,
     question: Question,
 ) -> Result<impl Reply, Rejection> {
-    let title = match check_profanity(question.title).await {
+    let title = tokio::spawn(check_profanity(question.title));
+
+    let content = tokio::spawn(check_profanity(question.content));
+
+    let (title, content) = (title.await.unwrap(), content.await.unwrap());
+
+    let title = match title {
         Ok(res) => res,
         Err(e) => return Err(warp::reject::custom(e)),
     };
 
-    let content = match check_profanity(question.content).await {
+    let content = match content {
         Ok(res) => res,
         Err(e) => return Err(warp::reject::custom(e)),
     };
