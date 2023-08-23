@@ -21,6 +21,7 @@ pub enum Error {
     ClientError(APILayerError),
     ServerError(APILayerError),
     ArgonLibraryError(ArgonError),
+    WrongPasswordError,
 }
 
 #[derive(Debug, Clone)]
@@ -46,6 +47,7 @@ impl fmt::Display for Error {
             Error::ClientError(err) => write!(f, "External Client error {}", err),
             Error::ServerError(err) => write!(f, "External Server error {}", err),
             Error::ArgonLibraryError(err) => write!(f, "Cannot verify password {}", err),
+            Error::WrongPasswordError => write!(f, "WrongPassword"),
         }
     }
 }
