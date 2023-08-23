@@ -23,3 +23,13 @@ fn hash_password(password: &[u8]) -> String {
     let config = Config::default();
     argon2::hash_encoded(password, &salt, &config).unwrap()
 }
+
+pub async fn login(store: Store, login: Account) -> Result<impl Reply, Rejection> {
+    match store.get_account(login.email).await {
+        Ok(account) => {
+            todo!("implement password verification");
+            Ok(warp::reply::json(&account))
+        }
+        Err(e) => Err(warp::reject::custom(e))
+    }
+}
