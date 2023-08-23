@@ -1,5 +1,6 @@
 use reqwest::Error as ReqwestError;
 use reqwest_middleware::Error as ReqwestMiddlewareError;
+use sqlx::Error as SqlxError;
 use std::fmt;
 use std::fmt::Display;
 use warp::{
@@ -13,7 +14,7 @@ use tracing::{event, instrument, Level};
 pub enum Error {
     ParseError(std::num::ParseIntError),
     MissingParameters,
-    DatabaseQueryError,
+    DatabaseQueryError(SqlxError),
     ReqwestAPIError(ReqwestError),
     ReqwestMiddlewareAPIError(ReqwestMiddlewareError),
     ClientError(APILayerError),
@@ -37,7 +38,7 @@ impl fmt::Display for Error {
         match self {
             Error::ParseError(ref err) => write!(f, "Parse error: {}", err),
             Error::MissingParameters => write!(f, "Missing parameter"),
-            Error::DatabaseQueryError => write!(f, "Query could not be executed"),
+            Error::DatabaseQueryError(err) => write!(f, "Query could not be executed {}", err),
             Error::ReqwestAPIError(err) => write!(f, "Reqwest error: {}", err),
             Error::ReqwestMiddlewareAPIError(err) => write!(f, "Reqwest middleware error: {}", err),
             Error::ClientError(err) => write!(f, "External Client error {}", err),
@@ -49,14 +50,32 @@ impl fmt::Display for Error {
 impl Reject for Error {}
 impl Reject for APILayerError {}
 
+const DUPLICATE_KEY: u32 = 23505;
+
 #[instrument]
 pub async fn return_error(rejection: Rejection) -> Result<impl Reply, Rejection> {
-    if let Some(Error::DatabaseQueryError) = rejection.find() {
+    if let Some(Error::DatabaseQueryError(e)) = rejection.find() {
         event!(Level::ERROR, "Database query error");
-        Ok(warp::reply::with_status(
-            Error::DatabaseQueryError.to_string(),
-            StatusCode::UNPROCESSABLE_ENTITY,
-        ))
+
+        match e {
+            SqlxError::Database(err) => {
+                if err.code().unwrap().parse::<u32>().unwrap() == DUPLICATE_KEY {
+                    Ok(warp::reply::with_status(
+                        "Account already exists".to_string(),
+                        StatusCode::UNPROCESSABLE_ENTITY,
+                    ))
+                } else {
+                    Ok(warp::reply::with_status(
+                        "Cannot update data".to_string(),
+                        StatusCode::UNPROCESSABLE_ENTITY,
+                    ))
+                }
+            }
+            _ => Ok(warp::reply::with_status(
+                "Cannot update data".to_string(),
+                StatusCode::UNPROCESSABLE_ENTITY,
+            )),
+        }
     } else if let Some(Error::ReqwestAPIError(e)) = rejection.find() {
         event!(Level::ERROR, "{}", e);
         Ok(warp::reply::with_status(
