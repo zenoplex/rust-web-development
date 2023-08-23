@@ -1,3 +1,4 @@
+use argon2::Error as ArgonError;
 use reqwest::Error as ReqwestError;
 use reqwest_middleware::Error as ReqwestMiddlewareError;
 use sqlx::Error as SqlxError;
@@ -19,6 +20,7 @@ pub enum Error {
     ReqwestMiddlewareAPIError(ReqwestMiddlewareError),
     ClientError(APILayerError),
     ServerError(APILayerError),
+    ArgonLibraryError(ArgonError),
 }
 
 #[derive(Debug, Clone)]
@@ -43,6 +45,7 @@ impl fmt::Display for Error {
             Error::ReqwestMiddlewareAPIError(err) => write!(f, "Reqwest middleware error: {}", err),
             Error::ClientError(err) => write!(f, "External Client error {}", err),
             Error::ServerError(err) => write!(f, "External Server error {}", err),
+            Error::ArgonLibraryError(err) => write!(f, "Cannot verify password {}", err),
         }
     }
 }
