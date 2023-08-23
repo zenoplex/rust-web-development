@@ -191,4 +191,23 @@ impl Store {
             }
         }
     }
+
+    pub async fn get_account(&self, email: String) -> Result<Account, Error> {
+        match sqlx::query("SELECT * from accounts WHERE email = $1")
+            .bind(email)
+            .map(|row: PgRow| Account {
+                id: Some(AccountId(row.get("id"))),
+                email: row.get("email"),
+                password: row.get("password"),
+            })
+            .fetch_one(&self.connection)
+            .await
+        {
+            Ok(account) => Ok(account),
+            Err(e) => {
+                tracing::event!(tracing::Level::ERROR, "{:?}", e);
+                Err(Error::DatabaseQueryError(e))
+            }
+        }
+    }
 }
