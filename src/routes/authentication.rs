@@ -26,10 +26,24 @@ fn hash_password(password: &[u8]) -> String {
 
 pub async fn login(store: Store, login: Account) -> Result<impl Reply, Rejection> {
     match store.get_account(login.email).await {
-        Ok(account) => {
-            todo!("implement password verification");
-            Ok(warp::reply::json(&account))
-        }
-        Err(e) => Err(warp::reject::custom(e))
+        Ok(account) => match verify_password(&account.password, login.password.as_bytes()) {
+            Ok(verified) => {
+                if verified {
+                    Ok(warp::reply::json(&account))
+                } else {
+                    Err(warp::reject::custom(
+                        handle_error::Error::WrongPasswordError,
+                    ))
+                }
+            }
+            Err(e) => Err(warp::reject::custom(
+                handle_error::Error::ArgonLibraryError(e),
+            )),
+        },
+        Err(e) => Err(warp::reject::custom(e)),
     }
+}
+
+fn verify_password(hash: &str, password: &[u8]) -> Result<bool, argon2::Error> {
+    argon2::verify_encoded(hash, password)
 }
