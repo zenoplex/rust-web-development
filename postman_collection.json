@@ -1,0 +1,199 @@
+{
+	"info": {
+		"_postman_id": "927212fe-4d35-4473-a084-6b2629fbea77",
+		"name": "rustwebdev",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "4896991"
+	},
+	"item": [
+		{
+			"name": "localhost:3030/questions/1",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:3030/questions/1",
+					"host": [
+						"localhost"
+					],
+					"port": "3030",
+					"path": [
+						"questions",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get  questions",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:3030/questions",
+					"host": [
+						"localhost"
+					],
+					"port": "3030",
+					"path": [
+						"questions"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "add question",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"title\": \"New dumb son of a bitch dick question\",\n    \"content\": \"How does this shit work?\",\n    \"tags\": [\"test\", \"test-2\"]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:3030/questions",
+					"host": [
+						"localhost"
+					],
+					"port": "3030",
+					"path": [
+						"questions"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "add answer",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/x-www-form-urlencoded"
+					}
+				],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "question_id",
+							"value": "2",
+							"type": "text"
+						},
+						{
+							"key": "content",
+							"value": "Damn. This is the question I had.",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "localhost:3030/answers",
+					"host": [
+						"localhost"
+					],
+					"port": "3030",
+					"path": [
+						"answers"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "update question",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"id\": 3,\n    \"title\": \"Updated and shitty title\",\n    \"content\": \"Updated and shitty fucking content\",\n    \"tags\": []\n}"
+				},
+				"url": {
+					"raw": "localhost:3030/questions/3",
+					"host": [
+						"localhost"
+					],
+					"port": "3030",
+					"path": [
+						"questions",
+						"3"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "registration",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"id\": 2,\n    \"email\": \"hog3333e@test.com\",\n    \"password\": \"test\"\n}"
+				},
+				"url": {
+					"raw": "localhost:3030/registration",
+					"host": [
+						"localhost"
+					],
+					"port": "3030",
+					"path": [
+						"registration"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "login",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\": \"hog33e@test.com\",\n    \"password\": \"test\"\n}"
+				},
+				"url": {
+					"raw": "localhost:3030/login",
+					"host": [
+						"localhost"
+					],
+					"port": "3030",
+					"path": [
+						"login"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
