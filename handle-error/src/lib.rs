@@ -23,6 +23,7 @@ pub enum Error {
     ArgonLibraryError(ArgonError),
     WrongPasswordError,
     CannotDecryptToken,
+    Unauthorized,
 }
 
 #[derive(Debug, Clone)]
@@ -50,6 +51,7 @@ impl fmt::Display for Error {
             Error::ArgonLibraryError(err) => write!(f, "Cannot verify password {}", err),
             Error::WrongPasswordError => write!(f, "WrongPassword"),
             Error::CannotDecryptToken => write!(f, "Cannot decrypt token"),
+            Error::Unauthorized => write!(f, "Unauthorized"),
         }
     }
 }
@@ -118,6 +120,12 @@ pub async fn return_error(rejection: Rejection) -> Result<impl Reply, Rejection>
         Ok(warp::reply::with_status(
             error.to_string(),
             StatusCode::UNPROCESSABLE_ENTITY,
+        ))
+    } else if let Some(Error::Unauthorized) = rejection.find() {
+        event!(Level::ERROR, "Not matching account id");
+        Ok(warp::reply::with_status(
+            "No permission to change underlying resource".to_string(),
+            StatusCode::UNAUTHORIZED,
         ))
     } else if let Some(error) = rejection.find::<Error>() {
         event!(Level::ERROR, "{}", error);
