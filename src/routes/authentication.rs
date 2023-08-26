@@ -1,5 +1,5 @@
 use argon2::{self, Config};
-use paseto::v2::local_paseto;
+use chrono::{Duration, Utc};
 use rand::Rng;
 use warp::{Rejection, Reply};
 
@@ -58,7 +58,14 @@ fn verify_password(hash: &str, password: &[u8]) -> Result<bool, argon2::Error> {
 const PASETO_KEY: [u8; 32] = [0u8; 32];
 
 fn issue_token(account_id: AccountId) -> String {
-    let state = serde_json::to_string(&account_id).expect("Failed to serialize");
+    let current_data_time = Utc::now();
+    let dt = current_data_time + Duration::days(1);
 
-    local_paseto(&state, None, &PASETO_KEY).expect("Failed to create token")
+    paseto::tokens::PasetoBuilder::new()
+        .set_encryption_key(&PASETO_KEY)
+        .set_expiration(&dt)
+        .set_not_before(&current_data_time)
+        .set_claim("account_id", serde_json::json!(account_id))
+        .build()
+        .expect("Failed to construct paseto token.")
 }
