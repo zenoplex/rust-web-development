@@ -54,6 +54,7 @@ fn verify_password(hash: &str, password: &[u8]) -> Result<bool, argon2::Error> {
     argon2::verify_encoded(hash, password)
 }
 
+// TODO: replace with env var
 const PASETO_KEY: [u8; 32] = [0u8; 32];
 
 fn issue_token(account_id: AccountId) -> String {
