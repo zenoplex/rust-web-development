@@ -22,6 +22,7 @@ pub enum Error {
     ServerError(APILayerError),
     ArgonLibraryError(ArgonError),
     WrongPasswordError,
+    CannotDecryptToken,
 }
 
 #[derive(Debug, Clone)]
@@ -48,6 +49,7 @@ impl fmt::Display for Error {
             Error::ServerError(err) => write!(f, "External Server error {}", err),
             Error::ArgonLibraryError(err) => write!(f, "Cannot verify password {}", err),
             Error::WrongPasswordError => write!(f, "WrongPassword"),
+            Error::CannotDecryptToken => write!(f, "Cannot decrypt token"),
         }
     }
 }
