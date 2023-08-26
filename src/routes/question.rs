@@ -1,5 +1,6 @@
 use crate::profanity::check_profanity;
 use crate::store;
+use crate::types::account::Session;
 use crate::types::pagination::extract_pagination;
 use crate::types::pagination::Pagination;
 use crate::types::question::NewQuestion;
@@ -99,35 +100,43 @@ pub async fn add_question(
 
 pub async fn update_question(
     id: i32,
+    session: Session,
     store: store::Store,
     question: Question,
 ) -> Result<impl Reply, Rejection> {
-    let title = check_profanity(question.title);
+    if store
+        .is_question_owner(question.id.0, session.account_id)
+        .await?
+    {
+        let title = check_profanity(question.title);
 
-    let content = check_profanity(question.content);
+        let content = check_profanity(question.content);
 
-    let (title, content) = tokio::join!(title, content);
+        let (title, content) = tokio::join!(title, content);
 
-    let title = match title {
-        Ok(res) => res,
-        Err(e) => return Err(warp::reject::custom(e)),
-    };
+        let title = match title {
+            Ok(res) => res,
+            Err(e) => return Err(warp::reject::custom(e)),
+        };
 
-    let content = match content {
-        Ok(res) => res,
-        Err(e) => return Err(warp::reject::custom(e)),
-    };
+        let content = match content {
+            Ok(res) => res,
+            Err(e) => return Err(warp::reject::custom(e)),
+        };
 
-    let question = Question {
-        id: question.id,
-        title,
-        content,
-        tags: question.tags,
-    };
+        let question = Question {
+            id: question.id,
+            title,
+            content,
+            tags: question.tags,
+        };
 
-    match store.update_question(question, id).await {
-        Ok(question) => Ok(warp::reply::json(&question)),
-        Err(e) => Err(warp::reject::custom(e)),
+        match store.update_question(question, id).await {
+            Ok(question) => Ok(warp::reply::json(&question)),
+            Err(e) => Err(warp::reject::custom(e)),
+        }
+    } else {
+        Err(warp::reject::custom(handle_error::Error::Unauthorized))
     }
 }
 

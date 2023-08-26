@@ -84,7 +84,7 @@ fn verify_token(token: String) -> Result<Session, handle_error::Error> {
     serde_json::from_value::<Session>(token).map_err(|_| handle_error::Error::CannotDecryptToken)
 }
 
-fn auth() -> impl Filter<Extract = (Session,), Error = Rejection> + Clone {
+pub fn auth() -> impl Filter<Extract = (Session,), Error = Rejection> + Clone {
     warp::header::<String>("Authorization").and_then(|token: String| {
         let token = match verify_token(token) {
             Ok(t) => t,
