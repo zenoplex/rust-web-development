@@ -5,7 +5,7 @@ use warp::{Rejection, Reply};
 
 use crate::{
     store::Store,
-    types::account::{Account, AccountId},
+    types::account::{Account, AccountId, Session},
 };
 
 pub async fn register(store: Store, account: Account) -> Result<impl Reply, Rejection> {
@@ -68,4 +68,16 @@ fn issue_token(account_id: AccountId) -> String {
         .set_claim("account_id", serde_json::json!(account_id))
         .build()
         .expect("Failed to construct paseto token.")
+}
+
+fn verify_token(token: String) -> Result<Session, handle_error::Error> {
+    let token = paseto::tokens::validate_local_token(
+        &token,
+        None,
+        &PASETO_KEY,
+        &paseto::tokens::TimeBackend::Chrono,
+    )
+    .map_err(|_| handle_error::Error::CannotDecryptToken)?;
+
+    serde_json::from_value::<Session>(token).map_err(|_| handle_error::Error::CannotDecryptToken)
 }
