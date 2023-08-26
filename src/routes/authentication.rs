@@ -1,7 +1,9 @@
+use std::future;
+
 use argon2::{self, Config};
 use chrono::{Duration, Utc};
 use rand::Rng;
-use warp::{Rejection, Reply};
+use warp::{Filter, Rejection, Reply};
 
 use crate::{
     store::Store,
@@ -80,4 +82,15 @@ fn verify_token(token: String) -> Result<Session, handle_error::Error> {
     .map_err(|_| handle_error::Error::CannotDecryptToken)?;
 
     serde_json::from_value::<Session>(token).map_err(|_| handle_error::Error::CannotDecryptToken)
+}
+
+fn auth() -> impl Filter<Extract = (Session,), Error = Rejection> + Clone {
+    warp::header::<String>("Authorization").and_then(|token: String| {
+        let token = match verify_token(token) {
+            Ok(t) => t,
+            Err(_) => return future::ready(Err(warp::reject::reject())),
+        };
+
+        future::ready(Ok(token))
+    })
 }
