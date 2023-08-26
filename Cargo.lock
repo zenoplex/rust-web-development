@@ -1687,6 +1687,7 @@ dependencies = [
 name = "rust-web-development"
 version = "0.1.0"
 dependencies = [
+ "chrono",
  "dotenvy",
  "handle-error",
  "paseto",
