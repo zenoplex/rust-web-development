@@ -67,9 +67,11 @@ pub async fn get_questions(
 // }
 
 pub async fn add_question(
+    session: Session,
     store: store::Store,
     new_question: NewQuestion,
 ) -> Result<impl Reply, Rejection> {
+    let account_id = session.account_id;
     let title = check_profanity(new_question.title);
 
     let content = check_profanity(new_question.content);
@@ -92,7 +94,7 @@ pub async fn add_question(
         tags: new_question.tags,
     };
 
-    match store.add_question(question).await {
+    match store.add_question(question, account_id).await {
         Ok(question) => Ok(warp::reply::json(&question)),
         Err(e) => Err(warp::reject::custom(e)),
     }
