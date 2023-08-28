@@ -107,7 +107,7 @@ pub async fn update_question(
     question: Question,
 ) -> Result<impl Reply, Rejection> {
     if store
-        .is_question_owner(question.id.0, session.account_id)
+        .is_question_owner(question.id.0, &session.account_id)
         .await?
     {
         let title = check_profanity(question.title);
@@ -142,10 +142,19 @@ pub async fn update_question(
     }
 }
 
-pub async fn delete_question(id: i32, store: store::Store) -> Result<impl Reply, Rejection> {
-    if let Err(e) = store.delete_question(id).await {
-        return Err(warp::reject::custom(e));
+pub async fn delete_question(
+    id: i32,
+    session: Session,
+    store: store::Store,
+) -> Result<impl Reply, Rejection> {
+    let account_id = session.account_id;
+    if store.is_question_owner(id, &account_id).await? {
+        if let Err(e) = store.delete_question(id, account_id).await {
+            return Err(warp::reject::custom(e));
+        }
+        Ok(warp::reply::with_status("Question deleted", StatusCode::OK))
+    } else {
+        println!("{}", id);
+        Err(warp::reject::custom(handle_error::Error::Unauthorized))
     }
-
-    Ok(warp::reply::with_status("Question deleted", StatusCode::OK))
 }
