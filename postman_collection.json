@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "927212fe-4d35-4473-a084-6b2629fbea77",
+		"_postman_id": "2e836e4f-fcb2-4883-8a94-66515306e975",
 		"name": "rustwebdev",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "4896991"
@@ -51,11 +51,16 @@
 					{
 						"key": "Content-Type",
 						"value": "application/json"
+					},
+					{
+						"key": "Authorization",
+						"value": "{{Authorization}}",
+						"type": "text"
 					}
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"title\": \"New dumb son of a bitch dick question\",\n    \"content\": \"How does this shit work?\",\n    \"tags\": [\"test\", \"test-2\"]\n}",
+					"raw": "{\n    \"title\": \"New dumb son of a bitch question\",\n    \"content\": \"How does this shit work?\",\n    \"tags\": [\"test\", \"test-2\"]\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -116,26 +121,34 @@
 		{
 			"name": "update question",
 			"request": {
+				"auth": {
+					"type": "noauth"
+				},
 				"method": "PUT",
 				"header": [
 					{
 						"key": "Content-Type",
 						"value": "application/json"
+					},
+					{
+						"key": "Authorization",
+						"value": "{{Authorization}}",
+						"type": "text"
 					}
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"id\": 3,\n    \"title\": \"Updated and shitty title\",\n    \"content\": \"Updated and shitty fucking content\",\n    \"tags\": []\n}"
+					"raw": "{\n    \"id\": 29,\n    \"title\": \"Updated and shitty title\",\n    \"content\": \"Updated and shitty damn content\",\n    \"tags\": []\n}"
 				},
 				"url": {
-					"raw": "localhost:3030/questions/3",
+					"raw": "localhost:3030/questions/29",
 					"host": [
 						"localhost"
 					],
 					"port": "3030",
 					"path": [
 						"questions",
-						"3"
+						"29"
 					]
 				}
 			},
@@ -194,6 +207,61 @@
 				}
 			},
 			"response": []
+		},
+		{
+			"name": "delete question",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Authorization",
+						"value": "{{Authorization}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "localhost:3030/questions/1",
+					"host": [
+						"localhost"
+					],
+					"port": "3030",
+					"path": [
+						"questions",
+						"1"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "Authorization",
+			"value": ""
 		}
 	]
 }
