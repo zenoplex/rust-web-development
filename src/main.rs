@@ -89,6 +89,7 @@ async fn main() {
         .and(warp::path("answers"))
         .and(warp::path::end())
         .and(store_filter.clone())
+        .and(routes::authentication::auth())
         .and(warp::body::form())
         .and_then(routes::answer::add_answer);
 
